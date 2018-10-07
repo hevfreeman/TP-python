@@ -2,29 +2,35 @@
 import argparse
 import sys
 import fnmatch
+from collections import deque
+
+BUFFER_SIZE = 10
 
 def output(line):
     print(line)
 
-def grep_output(lines, params, all_numbers, context_numbers):
-    if params.count:
-        output(str(len(all_numbers)))
+def grep_output(line, is_context=False, with_line_number=False, n=0):
+    if with_line_number:
+        if is_context:
+            output(f'{n}-{line}')
+        else:
+            output(f'{n}:{line}')
     else:
-        for n in all_numbers:
-            if params.line_number:
-                if n in context_numbers:
-                    output(f'{n+1}-{lines[n]}')
-                else:
-                    output(f'{n+1}:{lines[n]}')
-            else:
-                output(lines[n])
+        output(line)
 
 def grep(lines, params):
-    to_print = set() # индексы строк, включая контекстные
-    found = set() # индексы строк, исключая контекстные
+    n = 0       # счетчик номера строки
+    count = 0   # счетчик подходящих строк
+    b = max(params.before_context, params.context)  # количество строк до искомой в контексте
+    a = max(params.after_context, params.context)   # количество строк после искомой в контексте
+    context_b = deque(maxlen=b) # очередь предыдущих строк контекста для печати в случае нахождения искомой
+    context_a_count = 0         # счетчик оставшихся последующих строк контекста для печати
 
-    for n, line in enumerate(lines):
+    for line in lines:
+        n+=1
         line = line.rstrip()
+        line_copy = line
+
         if params.ignore_case:
             line = line.lower()
 
@@ -32,16 +38,29 @@ def grep(lines, params):
         if params.invert:
             match = not match
 
-        b = max(params.before_context,params.context)
-        a = max(params.after_context,params.context)
-
-        if match:
-            found.add(n)
-            for i in range(max(0,n-b),min(n+a+1,len(lines))):
-                to_print.add(i)
-
-    grep_output(lines, params, to_print, to_print.difference(found))
-
+        if params.count and match:
+            count+=1
+        elif match:
+            count+=1
+            if b:
+                delta = len(context_b)
+                while context_b:
+                    grep_output(context_b.popleft(), True, params.line_number, n-delta)
+                    delta-=1
+            grep_output(line_copy, False, params.line_number, n)
+            if a:
+                context_a_count = a
+        else:
+            if context_a_count:
+                grep_output(line_copy, True, params.line_number, n)
+                context_a_count-=1
+            elif b and len(context_b) >= b:
+                context_b.popleft()
+                context_b.append(line_copy)
+            else:
+                context_b.append(line_copy)
+    if params.count:
+        output(str(count))
 
 def parse_args(args):
     parser = argparse.ArgumentParser(description='This is a simple grep on python')
