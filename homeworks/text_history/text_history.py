@@ -11,6 +11,9 @@ class TextHistory:
         self.__version = 0
         self.__actions_history = {}  # keys are .from_version of stored values
 
+    def __next_version(self):
+        return self.__version + 1
+
     @property
     def text(self):
         return self.__text
@@ -31,22 +34,22 @@ class TextHistory:
         return self.action(InsertAction(pos=pos if pos is not None else len(self.__text),
                            text=text,
                            from_version=self.__version,
-                           to_version=self.__version+1))
+                           to_version=self.__next_version()))
 
     def replace(self, text, pos=None):
         return self.action(ReplaceAction(text=text,
                            pos=pos if pos is not None else len(self.__text),
                            from_version=self.__version,
-                           to_version=self.__version + 1))
+                           to_version=self.__next_version()))
 
     def delete(self, pos, length):
-        return self.action(DeleteAction(pos,
-                                        length=length,
-                                        from_version=self.__version,
-                                        to_version=self.__version + 1))
+        return self.action(DeleteAction(pos=pos,
+                           length=length,
+                           from_version=self.__version,
+                           to_version=self.__next_version()))
 
     @staticmethod
-    def _optimize_actions__merge(action_list):
+    def _optimize_actions_by_merge(action_list):
         optimized_action_list = action_list.copy()
         for action1, action2 in pairwise(action_list):
             try:
@@ -66,8 +69,8 @@ class TextHistory:
         values = [self.__actions_history[k] for k in keys]
 
         if optimize:
-            copy_values = deepcopy(values)  # not to change initial actions list
-            values = TextHistory._optimize_actions__merge(copy_values)
+            copy_values = deepcopy(values)
+            values = TextHistory._optimize_actions_by_merge(copy_values)
         return values
 
 
