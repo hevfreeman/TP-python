@@ -15,8 +15,9 @@ class DirDict:
 
     def __iter__(self):
         for item_filename in os.listdir(self._dir_path):
-            with open(self.__file_path(item_filename), 'r') as item_file:
-                yield item_file.read()
+            yield item_filename
+            # with open(self.__file_path(item_filename), 'r') as item_file:
+            #     yield item_file.read()
 
     def __getitem__(self, item):
         if os.path.isfile(self.__file_path(item)):
@@ -35,8 +36,13 @@ class DirDict:
             os.remove(self.__file_path(key))
 
     def __str__(self):
-        pass
-    #  TODO
+        s = "{"
+        for key in self:
+            s += f"'{key}': '{self[key]}', "
+        s = s[:-2]
+        s += "}"
+        return s
+
 
 
 
