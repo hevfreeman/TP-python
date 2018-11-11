@@ -11,19 +11,19 @@ class ProfileTest(TestCase):
             return x * fract(x - 1)
 
         @fract.when
-        def fract_when_eq_0(x):
+        def fract(x):
             return x == 0
 
         @fract.then
-        def fract_then_eq_0(x):
+        def fract(x):
             return 1
 
         @fract.when
-        def fract_when_higher_5(x):
+        def fract(x):
             return x > 5
 
         @fract.then
-        def fract_then_higher_5(x):
+        def fract(x):
             return fract(5)
 
         print(fract)

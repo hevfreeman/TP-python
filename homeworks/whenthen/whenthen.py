@@ -12,11 +12,11 @@ def whenthen(func):
 
     def when(f):
         list_when.append(f)
-        return None
+        return new_func
 
     def then(f):
         list_then.append(f)
-        return None
+        return new_func
 
     new_func.when = when
     new_func.then = then
